@@ -16,6 +16,7 @@ export default function App() {
   const [articles, setArticles] = useState([])
   const [currentArticleId, setCurrentArticleId] = useState()
   const [spinnerOn, setSpinnerOn] = useState(false)
+  const currentArticle = articles.find(article => article.article_id === currentArticleId)
 
   // ✨ Research `useNavigate` in React Router v.6
   const navigate = useNavigate()
@@ -31,7 +32,7 @@ export default function App() {
     localStorage.removeItem('token');
     setMessage("Goodbye!");
     setArticles([]);
-    setCurrentArticleId();
+    setCurrentArticleId(null);
     setSpinnerOn(false);
     redirectToLogin();
   }
@@ -71,19 +72,18 @@ export default function App() {
     setMessage("");
     setSpinnerOn(true);
     const token = localStorage.getItem('token');
-    console.log(token)
     if (!token) {
       logout();
     } else {
       axios.get('http://localhost:9000/api/articles', { headers: {Authorization: token} })
         .then(resp => {
-          console.log(resp)
           setArticles(resp.data.articles);
           setMessage(resp.data.message);
           setSpinnerOn(false);
         })
         .catch(err => {
           console.log(err);
+          setMessage(err.message);
           setSpinnerOn(false);
         });
     }
@@ -94,18 +94,87 @@ export default function App() {
     // The flow is very similar to the `getArticles` function.
     // You'll know what to do! Use log statements or breakpoints
     // to inspect the response from the server.
-
+    setSpinnerOn(true);
+    const token = localStorage.getItem('token');
+    if (!token) {
+      logout();
+    } else {
+      axios.post('http://localhost:9000/api/articles', {"title": article.title, "text": article.text, "topic": article.topic }, { headers: {Authorization: token} })
+        .then(resp => {
+          axios.get('http://localhost:9000/api/articles', { headers: {Authorization: token} })
+            .then(r => {
+              setArticles(r.data.articles);
+            })
+            .catch(err => {
+              console.log(err);
+              setMessage(err.message);
+            });
+          setMessage(resp.data.message);
+          setSpinnerOn(false);
+        })
+        .catch(err => {
+          console.log(err);
+          setMessage(err.message);
+          setSpinnerOn(false);
+        });
+    }
   }
 
-  const updateArticle = ({ article_id, article }) => {
+  const updateArticle = ( article_id, article ) => {
     // ✨ implement
     // You got this!
-
+    setSpinnerOn(true);
+    const token = localStorage.getItem('token');
+    if (!token) {
+      logout();
+    } else {
+      axios.put(`http://localhost:9000/api/articles/${article_id}`, {"title": article.title, "text": article.text, "topic": article.topic }, { headers: {Authorization: token} })
+        .then(resp => {
+            axios.get('http://localhost:9000/api/articles', { headers: {Authorization: token} })
+              .then(r => {
+                setArticles(r.data.articles);
+              })
+              .catch(err => {
+                console.log(err);
+                setMessage(err.message);
+              });
+          setMessage(resp.data.message);
+          setSpinnerOn(false);
+        })
+        .catch(err => {
+          console.log(err);
+          setMessage(err.message);
+          setSpinnerOn(false);
+        });
+    }
   }
 
   const deleteArticle = article_id => {
     // ✨ implement
-
+    setSpinnerOn(true);
+    const token = localStorage.getItem('token');
+    if (!token) {
+      logout();
+    } else {
+      axios.delete(`http://localhost:9000/api/articles/${article_id.target.name}`, { headers: {Authorization: token} })
+        .then(resp => {
+          axios.get('http://localhost:9000/api/articles', { headers: {Authorization: token} })
+            .then(r => {
+              setArticles(r.data.articles);
+            })
+            .catch(err => {
+              console.log(err);
+              setMessage(err.message);
+            });
+          setMessage(resp.data.message);
+          setSpinnerOn(false);
+        })
+        .catch(err => {
+          console.log(err);
+          setMessage(err.message);
+          setSpinnerOn(false);
+        });
+    }
   }
 
   return (
@@ -124,7 +193,7 @@ export default function App() {
           <Route path="/" element={<LoginForm login={login} />} />
           <Route path="articles" element={
             <>
-              <ArticleForm postArticle={postArticle} updateArticle={updateArticle} setCurrentArticleId={setCurrentArticleId} />
+              <ArticleForm articles={articles} postArticle={postArticle} updateArticle={updateArticle} setCurrentArticleId={setCurrentArticleId} currentArticle={currentArticle} />
               <Articles articles={articles} getArticles={getArticles} deleteArticle={deleteArticle} setCurrentArticleId={setCurrentArticleId} />
             </>
           } />
